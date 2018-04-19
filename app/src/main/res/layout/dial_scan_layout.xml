@@ -1,0 +1,87 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout
+    xmlns:android="http://schemas.android.com/apk/res/android" android:layout_width="wrap_content"
+    android:layout_height="wrap_content">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_alignParentStart="true"
+        android:layout_alignParentTop="true"
+        android:orientation="vertical"
+        android:id="@+id/linearLayout"
+        android:layout_margin="10dp"
+        android:background="@drawable/border">
+
+        <TextView
+            android:id="@+id/textView"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Password"
+            android:textAlignment="center" />
+
+        <EditText
+            android:id="@+id/passwordinput"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:ems="10"
+            android:textAlignment="center"
+            android:inputType="textPassword" />
+
+    </LinearLayout>
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_alignParentStart="true"
+        android:layout_below="@+id/linearLayout"
+        android:orientation="vertical"
+        android:id="@+id/linearLayout2"
+        android:layout_margin="10dp"
+        android:background="@drawable/border">
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Confirm password"
+            android:textAlignment="center" />
+
+        <EditText
+            android:id="@+id/passwordinput2"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:ems="10"
+            android:textAlignment="center"
+            android:inputType="textPassword" />
+
+    </LinearLayout>
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_alignParentStart="true"
+        android:layout_below="@+id/linearLayout2"
+        android:orientation="vertical"
+        android:layout_margin="10dp"
+        android:background="@drawable/border">
+
+        <TextView
+            android:id="@+id/textView2"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Secret:"
+            android:textAlignment="center" />
+
+        <EditText
+            android:id="@+id/secretinput"
+            android:layout_width="match_parent"
+            android:layout_height="151dp"
+            android:ems="10"
+            android:minLines="4"
+            android:maxLines="8"
+            android:maxLength="4296"
+            android:inputType="textMultiLine"
+            android:textAlignment="center"
+            android:text="" />
+
+    </LinearLayout>
+
+</RelativeLayout>
