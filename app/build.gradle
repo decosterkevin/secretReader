@@ -25,6 +25,7 @@ allprojects {
 dependencies {
     implementation fileTree(dir: 'libs', include: ['*.jar'])
     implementation 'com.android.support:appcompat-v7:26.1.0'
+    implementation 'com.android.support:design:26.1.0'
     compile 'com.google.android.gms:play-services-vision:11.6.0'
     compile 'com.android.support.constraint:constraint-layout:1.1.0'
     compile "com.google.zxing:core:3.3.0"

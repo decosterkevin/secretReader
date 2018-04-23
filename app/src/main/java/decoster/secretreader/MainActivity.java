@@ -3,6 +3,8 @@ package decoster.secretreader;
 import android.Manifest;
 import android.app.AlertDialog;
 import android.content.ActivityNotFoundException;
+import android.content.ClipData;
+import android.content.ClipboardManager;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
@@ -27,6 +29,8 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
+import android.widget.ImageButton;
+import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -39,6 +43,9 @@ import com.google.zxing.MultiFormatWriter;
 import com.google.zxing.WriterException;
 import com.google.zxing.common.BitMatrix;
 import com.journeyapps.barcodescanner.BarcodeEncoder;
+import com.journeyapps.barcodescanner.Util;
+
+import org.w3c.dom.Text;
 
 import java.io.File;
 import java.io.FileOutputStream;
@@ -52,6 +59,7 @@ import pl.tajchert.nammu.PermissionCallback;
 public class MainActivity extends AppCompatActivity {
     private static final int BARCODE_READER_REQUEST_CODE = 1;
     private static final int ACTIVITY_SELECT_IMAGE =2;
+    private static final String folderName = "QRImages";
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -73,6 +81,15 @@ public class MainActivity extends AppCompatActivity {
                 createInputDial();
             }
         });
+
+        ImageButton button = ( ImageButton) findViewById(R.id.delete);
+        button.setOnClickListener(new View.OnClickListener() {
+            public void onClick(View v) {
+                deleteFolder();
+            }
+        });
+
+
         permission();
         Utilities.createPublicDir();
     }
@@ -105,7 +122,7 @@ public class MainActivity extends AppCompatActivity {
                             Bitmap bitmap = MediaStore.Images.Media.getBitmap(this.getContentResolver(), selectedImage);
                             BarcodeDetector detector = new BarcodeDetector.Builder(getApplicationContext()).setBarcodeFormats(Barcode.DATA_MATRIX | Barcode.QR_CODE).build();
                             if (!detector.isOperational()) {
-                                Toast.makeText(this, "Could not set up the detector!", Toast.LENGTH_SHORT);
+                                Toast.makeText(this, "Could not set up the detector!", Toast.LENGTH_SHORT).show();
                                 return;
                             }
                             Frame frame = new Frame.Builder().setBitmap(bitmap).build();
@@ -129,10 +146,43 @@ public class MainActivity extends AppCompatActivity {
             else super.onActivityResult(requestCode, resultCode, data);
     }
 
+    /** Called when the user touches the button */
+    private void deleteFolder() {
+        AlertDialog.Builder builder = new AlertDialog.Builder(
+                MainActivity.this);
+        builder.setCancelable(false);
+        builder.setTitle("Do you really want to delete the image folder?");
+
+        builder.setPositiveButton(R.string.ok, new DialogInterface.OnClickListener() {
+            public void onClick(DialogInterface dialog, int id) {
+                File dir = Utilities.getPublicAlbumStorageDir(folderName);
+                if (dir.isDirectory())
+                {
+                    String[] children = dir.list();
+                    for (int i = 0; i < children.length; i++)
+                    {
+                        new File(dir, children[i]).delete();
+                    }
+
+                }
+                Toast.makeText(getApplicationContext(), "Images deleted", Toast.LENGTH_SHORT);
+
+            }
+        });
+
+        builder.setNeutralButton(R.string.cancel, new DialogInterface.OnClickListener() {
+            public void onClick(DialogInterface dialog, int id) {
+
+
+            }
+        });
+        builder.show();
+    }
+
     private void createPasswordDial(final String secret) {
         AlertDialog.Builder builder = new AlertDialog.Builder(MainActivity.this);
         builder.setTitle("Enter password");
-
+        builder.setCancelable(false);
         final EditText input = new EditText(this);
         input.setInputType( InputType.TYPE_CLASS_TEXT | InputType.TYPE_TEXT_VARIATION_PASSWORD );
         input.setTransformationMethod(PasswordTransformationMethod.getInstance());
@@ -168,20 +218,35 @@ public class MainActivity extends AppCompatActivity {
         }
 
         AlertDialog.Builder builder = new AlertDialog.Builder(MainActivity.this);
+        builder.setCancelable(false);
+        TextView text = new TextView(this);
+        text.setPadding(50, 50,50,50);
+        text.setTextIsSelectable(true);
+        builder.setView(text);
         builder.setTitle("The secret:");
         if (msg == null) {
 
-            builder.setMessage("Error while decrypting message");
+            text.setText("Error while decrypting message");
         }
         else {
-            builder.setMessage(msg);
+            text.setText(msg);
         }
 
-
+        final String tmpMsg =msg;
         builder.setPositiveButton(R.string.ok, new DialogInterface.OnClickListener() {
             public void onClick(DialogInterface dialog, int id) {
                     dialog.dismiss();
                 }
+        });
+        builder.setNeutralButton("COPY", new DialogInterface.OnClickListener() {
+            public void onClick(DialogInterface dialog, int id) {
+                ClipboardManager clipboard = (ClipboardManager) getSystemService(Context.CLIPBOARD_SERVICE);
+                ClipData clip = ClipData.newPlainText("secret", tmpMsg);
+                clipboard.setPrimaryClip(clip);
+                Toast.makeText(getApplicationContext(), "Secret copied to clipboard", Toast.LENGTH_LONG).show();;
+
+
+            }
         });
         builder.show();
 
@@ -191,33 +256,42 @@ public class MainActivity extends AppCompatActivity {
     }
 
 
+    private void createResultDial(final String path) {
+        final AlertDialog.Builder builder = new AlertDialog.Builder(MainActivity.this);
+        builder.setCancelable(false);
+        TextView text = new TextView(this);
+        text.setPadding(50, 50,50,50);
+        text.setTextIsSelectable(true);
+        text.setText("image saved under " + path);
 
+        builder.setView(text);
+
+        builder.setPositiveButton(R.string.ok, new DialogInterface.OnClickListener() {
+            public void onClick(DialogInterface dialog, int id) {
+
+            }
+        });
+        builder.setNeutralButton("OPEN", new DialogInterface.OnClickListener() {
+            public void onClick(DialogInterface dialog, int id) {
+                Intent intent = new Intent();
+                intent.setAction(Intent.ACTION_VIEW);
+                Log.d("main", path);
+                intent.setDataAndType(Uri.parse("file://" + path), "image/*");
+                startActivity(intent);
+            }
+        });
+        builder.show();
+
+    }
     private void createInputDial() {
         final AlertDialog.Builder builder = new AlertDialog.Builder(MainActivity.this);
+        builder.setCancelable(false);
         LayoutInflater inflater = this.getLayoutInflater();
         final View v = inflater.inflate(R.layout.dial_scan_layout, null);
         builder.setTitle("The secret");
         builder.setView(v);
+        builder.setPositiveButton(R.string.ok, null);
 
-        builder.setPositiveButton(R.string.ok, new DialogInterface.OnClickListener() {
-            public void onClick(DialogInterface dialog, int id) {
-                EditText pw1 = (EditText)v.findViewById(R.id.passwordinput);
-                EditText pw2 = (EditText)v.findViewById(R.id.passwordinput2);
-                EditText input2= (EditText)v.findViewById(R.id.secretinput);
-                String password1 = pw1.getText().toString();
-                String password2 = pw2.getText().toString();
-
-                if(password1.equals(password2)) {
-                    String secret =input2.getText().toString();
-                    createQRCodeToPng(password1, secret);
-                }
-                else{
-                    Toast.makeText(MainActivity.this, "Passwords must be the same", Toast.LENGTH_LONG);
-                }
-
-                dialog.dismiss();
-            }
-        });
         builder.setNeutralButton(R.string.cancel, new DialogInterface.OnClickListener() {
             public void onClick(DialogInterface dialog, int id) {
 
@@ -226,6 +300,39 @@ public class MainActivity extends AppCompatActivity {
         });
         // Create the AlertDialog
         AlertDialog dialog = builder.create();
+
+
+        dialog.setOnShowListener(new DialogInterface.OnShowListener() {
+
+            @Override
+            public void onShow(final DialogInterface dialog) {
+
+                Button b = ((AlertDialog)dialog).getButton(AlertDialog.BUTTON_POSITIVE);
+                b.setOnClickListener(new View.OnClickListener() {
+
+                    @Override
+                    public void onClick(View view) {
+                        EditText pw1 = (EditText)v.findViewById(R.id.passwordinput);
+                        EditText pw2 = (EditText)v.findViewById(R.id.passwordinput2);
+                        EditText input2= (EditText)v.findViewById(R.id.secretinput);
+                        String password1 = pw1.getText().toString();
+                        String password2 = pw2.getText().toString();
+                        String secret =input2.getText().toString();
+                        if(password1.equals(password2) && !secret.matches("") && !password1.matches("") && !password2.matches("")) {
+
+                            createQRCodeToPng(password1, secret);
+                            dialog.dismiss();
+                        }
+                        else if(secret.matches("") || password1.matches("") || password2.matches("")) {
+                            Toast.makeText(getApplicationContext(), "the field should not be empty", Toast.LENGTH_LONG).show();;
+                        }
+                        else{
+                            Toast.makeText(getApplicationContext(), "Passwords must be the same", Toast.LENGTH_LONG).show();;
+                        }
+                    }
+                });
+            }
+        });
         dialog.show();
     }
 
@@ -251,14 +358,14 @@ public class MainActivity extends AppCompatActivity {
 
         try {
             if(Utilities.isExternalStorageWritable()) {
-                File dir = Utilities.getPublicAlbumStorageDir("QRImages");
+                File dir = Utilities.getPublicAlbumStorageDir(folderName);
                 File newFile = new File(dir, "qr_" + System.currentTimeMillis() + ".png");
 
                 FileOutputStream fos = new FileOutputStream(newFile);
                 image.compress(Bitmap.CompressFormat.PNG, 100, fos);
                 fos.flush();
                 fos.close();
-                Toast.makeText(getApplicationContext(), "image saved under " + newFile.getPath(), Toast.LENGTH_LONG).show();
+
                 MediaScannerConnection.scanFile(this,
                         new String[] { newFile.toString() }, null,
                         new MediaScannerConnection.OnScanCompletedListener() {
@@ -267,6 +374,8 @@ public class MainActivity extends AppCompatActivity {
                                 Log.i("ExternalStorage", "-> uri=" + uri);
                             }
                         });
+
+                createResultDial(newFile.getPath());
             }
             else {
 
@@ -303,7 +412,7 @@ public class MainActivity extends AppCompatActivity {
         final CharSequence[] options = { "Take photo", "Choose from library"};
         AlertDialog.Builder builder = new AlertDialog.Builder(
                 MainActivity.this);
-
+        builder.setCancelable(false);
         builder.setTitle("Select");
 
         builder.setItems(options, new DialogInterface.OnClickListener() {
@@ -339,5 +448,6 @@ public class MainActivity extends AppCompatActivity {
         dialog.show();
 
     }
+
 
 }
